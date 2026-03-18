@@ -45,16 +45,14 @@
     background: #f5f0e5;
     border: none;
     border-radius: 10px;
-    padding: 6px;
+    padding: 6px 10px;
     cursor: pointer;
     transition: all 0.2s;
-    line-height: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #999;
   }
-  .lang-btn:hover { background: #ebe4d4; }
-  .lang-btn img, .lang-option img {
-    border-radius: 3px;
-    vertical-align: middle;
-  }
+  .lang-btn:hover { background: #ebe4d4; color: #666; }
   .lang-menu {
     position: absolute;
     top: 48px;
@@ -75,9 +73,7 @@
     background: none;
     font-size: 14px;
     color: #555;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: block;
     cursor: pointer;
     border-radius: 8px;
     text-align: left;
@@ -396,20 +392,11 @@ function detectLang() {
 
 // Build lang menu
 const langMenu = document.getElementById('langMenu');
-function flagImg(cc, size) {
-  const img = document.createElement('img');
-  img.src = `https://flagcdn.com/${cc}.svg`;
-  img.width = size;
-  img.alt = cc;
-  return img;
-}
-
 langs.forEach(code => {
   const btn = document.createElement('button');
   btn.className = 'lang-option';
   btn.dataset.lang = code;
-  btn.appendChild(flagImg(i18n[code].cc, 24));
-  btn.appendChild(document.createTextNode(code.toUpperCase()));
+  btn.textContent = code.toUpperCase();
   btn.onclick = (e) => { e.stopPropagation(); setLang(code); toggleLangMenu(); };
   langMenu.appendChild(btn);
 });
@@ -444,9 +431,7 @@ function setLang(code) {
   document.getElementById('resultUnit').textContent = t.unit;
   document.getElementById('backBtn2').textContent = t.back;
   document.getElementById('resetBtn').textContent = t.restart;
-  const langBtn = document.getElementById('langBtn');
-  langBtn.innerHTML = '';
-  langBtn.appendChild(flagImg(t.cc, 28));
+  document.getElementById('langBtn').textContent = code.toUpperCase();
   langMenu.querySelectorAll('.lang-option').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === code);
   });
