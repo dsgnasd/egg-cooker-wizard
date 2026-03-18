@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Яйцеварка — Помощник</title>
+<title>Egg Cooker Wizard</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -23,6 +23,7 @@
     width: 100%;
     padding: 40px 32px;
     text-align: center;
+    position: relative;
   }
   .emoji-title { font-size: 48px; margin-bottom: 8px; }
   h1 { font-size: 22px; color: #333; margin-bottom: 28px; font-weight: 600; }
@@ -31,18 +32,71 @@
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: #999;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-weight: 600;
   }
-  .question { font-size: 17px; color: #444; margin-bottom: 20px; }
+  .question { font-size: 17px; color: #444; margin-bottom: 32px; }
+
+  /* Lang switcher */
+  .lang-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #f5f0e5;
+    border: none;
+    border-radius: 10px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 0;
+  }
+  .lang-btn:hover { background: #ebe4d4; }
+  .lang-btn img, .lang-option img {
+    border-radius: 3px;
+    vertical-align: middle;
+  }
+  .lang-menu {
+    position: absolute;
+    top: 48px;
+    right: 16px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    padding: 6px;
+    z-index: 10;
+    display: none;
+  }
+  .lang-menu.open { display: block; }
+  .lang-option {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    font-size: 14px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .lang-option:hover { background: #f5f0e5; }
+  .lang-option.active { color: #f0a500; font-weight: 600; }
 
   /* Egg count selector */
-  .egg-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    justify-items: center;
+  .egg-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     margin-bottom: 8px;
+  }
+  .egg-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
   }
   .egg-btn {
     width: 64px; height: 64px;
@@ -66,7 +120,7 @@
   /* Type selector */
   .type-grid { display: flex; flex-direction: column; gap: 10px; }
   .type-btn {
-    padding: 14px 20px;
+    padding: 16px 20px;
     border-radius: 14px;
     border: 2px solid #e8e0d0;
     background: #fffcf5;
@@ -74,15 +128,11 @@
     cursor: pointer;
     transition: all 0.2s;
     text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 12px;
   }
   .type-btn:hover { border-color: #f0a500; }
   .type-btn.active { border-color: #f0a500; background: #fff8e1; }
-  .type-btn .icon { font-size: 28px; }
   .type-btn .label { font-weight: 600; color: #333; }
-  .type-btn .desc { font-size: 13px; color: #999; }
+  .type-btn .desc { font-size: 13px; color: #999; margin-top: 2px; }
 
   /* Result */
   .result-circle {
@@ -141,8 +191,11 @@
 <body>
 
 <div class="card">
+  <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">🌐</button>
+  <div class="lang-menu" id="langMenu"></div>
+
   <div class="emoji-title">🥚</div>
-  <h1>Помощник яйцеварки</h1>
+  <h1 id="title"></h1>
   <div class="progress">
     <div class="dot" id="dot0"></div>
     <div class="dot" id="dot1"></div>
@@ -151,50 +204,53 @@
 
   <!-- Step 1: Count -->
   <div id="step0">
-    <div class="step-label">Шаг 1 из 3</div>
-    <div class="question">Сколько яиц варим?</div>
-    <div class="egg-grid" id="eggGrid"></div>
+    <div class="step-label" id="stepLabel1"></div>
+    <div class="question" id="q1"></div>
+    <div class="egg-rows" id="eggGrid">
+      <div class="egg-row" id="eggRow1"></div>
+      <div class="egg-row" id="eggRow2"></div>
+    </div>
     <div class="nav">
-      <button class="btn btn-next" id="nextBtn0" disabled onclick="goTo(1)">Далее</button>
+      <button class="btn btn-next" id="nextBtn0" disabled onclick="goTo(1)"></button>
     </div>
   </div>
 
   <!-- Step 2: Type -->
   <div id="step1" class="hidden">
-    <div class="step-label">Шаг 2 из 3</div>
-    <div class="question">Как сварить?</div>
+    <div class="step-label" id="stepLabel2"></div>
+    <div class="question" id="q2"></div>
     <div class="type-grid" id="typeGrid">
       <button class="type-btn" data-type="soft" onclick="selectType(this)">
-        <span class="icon">💧</span>
-        <span><span class="label">Всмятку</span><br><span class="desc">Жидкий желток, ~3 мин</span></span>
+        <span class="label" id="typeSoftLabel"></span><br>
+        <span class="desc" id="typeSoftDesc"></span>
       </button>
       <button class="type-btn" data-type="medium" onclick="selectType(this)">
-        <span class="icon">🍯</span>
-        <span><span class="label">Полутвёрдое</span><br><span class="desc">Кремовый желток, ~6 мин</span></span>
+        <span class="label" id="typeMediumLabel"></span><br>
+        <span class="desc" id="typeMediumDesc"></span>
       </button>
       <button class="type-btn" data-type="hard" onclick="selectType(this)">
-        <span class="icon">🪨</span>
-        <span><span class="label">Вкрутую</span><br><span class="desc">Твёрдый желток, ~10 мин</span></span>
+        <span class="label" id="typeHardLabel"></span><br>
+        <span class="desc" id="typeHardDesc"></span>
       </button>
     </div>
     <div class="nav">
-      <button class="btn btn-back" onclick="goTo(0)">Назад</button>
-      <button class="btn btn-next" id="nextBtn1" disabled onclick="goTo(2)">Далее</button>
+      <button class="btn btn-back" id="backBtn1" onclick="goTo(0)"></button>
+      <button class="btn btn-next" id="nextBtn1" disabled onclick="goTo(2)"></button>
     </div>
   </div>
 
   <!-- Step 3: Result -->
   <div id="step2" class="hidden">
-    <div class="step-label">Готово!</div>
-    <div class="question">Налейте воды в яйцеварку:</div>
+    <div class="step-label" id="stepLabel3"></div>
+    <div class="question" id="q3"></div>
     <div class="result-circle">
       <div class="amount" id="resultMl">—</div>
-      <div class="unit">мл воды</div>
+      <div class="unit" id="resultUnit"></div>
     </div>
     <div class="result-info" id="resultInfo"></div>
     <div class="nav">
-      <button class="btn btn-back" onclick="goTo(1)">Назад</button>
-      <button class="btn btn-next" onclick="reset()">Сначала</button>
+      <button class="btn btn-back" id="backBtn2" onclick="goTo(1)"></button>
+      <button class="btn btn-next" id="resetBtn" onclick="reset()"></button>
     </div>
   </div>
 </div>
@@ -205,12 +261,202 @@ const data = {
   medium: [80, 75, 70, 65, 55, 50, 45],
   hard:   [110,110,100,90, 85, 80, 70]
 };
-const typeNames = { soft: 'всмятку', medium: 'полутвёрдое', hard: 'вкрутую' };
 
+const i18n = {
+  ru: {
+    title: 'Помощник яйцеварки',
+    step: (n) => `Шаг ${n} из 3`,
+    done: 'Готово!',
+    q1: 'Сколько яиц варим?',
+    q2: 'Как сварить?',
+    q3: 'Налейте воды в яйцеварку:',
+    next: 'Далее',
+    back: 'Назад',
+    restart: 'Сначала',
+    unit: 'мл воды',
+    soft: 'Всмятку', softDesc: 'Жидкий желток, ~3 мин',
+    medium: 'Полутвёрдое', mediumDesc: 'Кремовый желток, ~6 мин',
+    hard: 'Вкрутую', hardDesc: 'Твёрдый желток, ~10 мин',
+    egg: (n) => n === 1 ? 'яйцо' : (n >= 2 && n <= 4 ? 'яйца' : 'яиц'),
+    cc: 'ru'
+  },
+  en: {
+    title: 'Egg Cooker Helper',
+    step: (n) => `Step ${n} of 3`,
+    done: 'Done!',
+    q1: 'How many eggs?',
+    q2: 'How to cook?',
+    q3: 'Pour water into the egg cooker:',
+    next: 'Next',
+    back: 'Back',
+    restart: 'Start over',
+    unit: 'ml water',
+    soft: 'Soft-boiled', softDesc: 'Runny yolk, ~3 min',
+    medium: 'Medium', mediumDesc: 'Creamy yolk, ~6 min',
+    hard: 'Hard-boiled', hardDesc: 'Firm yolk, ~10 min',
+    egg: (n) => n === 1 ? 'egg' : 'eggs',
+    cc: 'gb'
+  },
+  de: {
+    title: 'Eierkocher-Helfer',
+    step: (n) => `Schritt ${n} von 3`,
+    done: 'Fertig!',
+    q1: 'Wie viele Eier?',
+    q2: 'Wie kochen?',
+    q3: 'Wasser in den Eierkocher gießen:',
+    next: 'Weiter',
+    back: 'Zurück',
+    restart: 'Neu starten',
+    unit: 'ml Wasser',
+    soft: 'Weich', softDesc: 'Flüssiges Eigelb, ~3 Min',
+    medium: 'Mittel', mediumDesc: 'Cremiges Eigelb, ~6 Min',
+    hard: 'Hart', hardDesc: 'Festes Eigelb, ~10 Min',
+    egg: (n) => n === 1 ? 'Ei' : 'Eier',
+    cc: 'de'
+  },
+  fr: {
+    title: 'Assistant cuiseur à œufs',
+    step: (n) => `Étape ${n} sur 3`,
+    done: 'Terminé !',
+    q1: 'Combien d\'œufs ?',
+    q2: 'Quelle cuisson ?',
+    q3: 'Versez l\'eau dans le cuiseur :',
+    next: 'Suivant',
+    back: 'Retour',
+    restart: 'Recommencer',
+    unit: 'ml d\'eau',
+    soft: 'À la coque', softDesc: 'Jaune liquide, ~3 min',
+    medium: 'Mollet', mediumDesc: 'Jaune crémeux, ~6 min',
+    hard: 'Dur', hardDesc: 'Jaune ferme, ~10 min',
+    egg: (n) => n === 1 ? 'œuf' : 'œufs',
+    cc: 'fr'
+  },
+  es: {
+    title: 'Asistente cocedor de huevos',
+    step: (n) => `Paso ${n} de 3`,
+    done: '¡Listo!',
+    q1: '¿Cuántos huevos?',
+    q2: '¿Cómo cocinar?',
+    q3: 'Vierta agua en el cocedor:',
+    next: 'Siguiente',
+    back: 'Atrás',
+    restart: 'Reiniciar',
+    unit: 'ml de agua',
+    soft: 'Pasado por agua', softDesc: 'Yema líquida, ~3 min',
+    medium: 'Medio', mediumDesc: 'Yema cremosa, ~6 min',
+    hard: 'Duro', hardDesc: 'Yema firme, ~10 min',
+    egg: (n) => n === 1 ? 'huevo' : 'huevos',
+    cc: 'es'
+  },
+  zh: {
+    title: '煮蛋器助手',
+    step: (n) => `第 ${n} 步，共 3 步`,
+    done: '完成！',
+    q1: '煮几个蛋？',
+    q2: '怎么煮？',
+    q3: '请向煮蛋器中加水：',
+    next: '下一步',
+    back: '返回',
+    restart: '重新开始',
+    unit: '毫升水',
+    soft: '溏心蛋', softDesc: '流心蛋黄，约3分钟',
+    medium: '半熟蛋', mediumDesc: '软嫩蛋黄，约6分钟',
+    hard: '全熟蛋', hardDesc: '全熟蛋黄，约10分钟',
+    egg: () => '个蛋',
+    cc: 'cn'
+  },
+  ja: {
+    title: 'エッグクッカー アシスタント',
+    step: (n) => `ステップ ${n} / 3`,
+    done: '完了！',
+    q1: '卵の数は？',
+    q2: 'ゆで加減は？',
+    q3: 'エッグクッカーに水を入れてください：',
+    next: '次へ',
+    back: '戻る',
+    restart: '最初から',
+    unit: 'ml の水',
+    soft: '半熟', softDesc: 'とろとろ黄身、約3分',
+    medium: '中間', mediumDesc: 'クリーミーな黄身、約6分',
+    hard: '固ゆで', hardDesc: 'しっかり黄身、約10分',
+    egg: () => '個',
+    cc: 'jp'
+  }
+};
+
+const langs = Object.keys(i18n);
+let currentLang = 'ru';
 let count = 0, type = '';
+
+// Detect browser language
+function detectLang() {
+  const nav = (navigator.language || '').slice(0, 2).toLowerCase();
+  return langs.includes(nav) ? nav : 'en';
+}
+
+// Build lang menu
+const langMenu = document.getElementById('langMenu');
+function flagImg(cc, size) {
+  const img = document.createElement('img');
+  img.src = `https://flagcdn.com/${cc}.svg`;
+  img.width = size;
+  img.alt = cc;
+  return img;
+}
+
+langs.forEach(code => {
+  const btn = document.createElement('button');
+  btn.className = 'lang-option';
+  btn.dataset.lang = code;
+  btn.appendChild(flagImg(i18n[code].cc, 24));
+  btn.appendChild(document.createTextNode(code.toUpperCase()));
+  btn.onclick = (e) => { e.stopPropagation(); setLang(code); toggleLangMenu(); };
+  langMenu.appendChild(btn);
+});
+
+function toggleLangMenu() {
+  langMenu.classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#langBtn') && !e.target.closest('#langMenu'))
+    langMenu.classList.remove('open');
+});
+
+function setLang(code) {
+  currentLang = code;
+  const t = i18n[code];
+  document.getElementById('title').textContent = t.title;
+  document.getElementById('stepLabel1').textContent = t.step(1);
+  document.getElementById('q1').textContent = t.q1;
+  document.getElementById('nextBtn0').textContent = t.next;
+  document.getElementById('stepLabel2').textContent = t.step(2);
+  document.getElementById('q2').textContent = t.q2;
+  document.getElementById('backBtn1').textContent = t.back;
+  document.getElementById('nextBtn1').textContent = t.next;
+  document.getElementById('typeSoftLabel').textContent = t.soft;
+  document.getElementById('typeSoftDesc').textContent = t.softDesc;
+  document.getElementById('typeMediumLabel').textContent = t.medium;
+  document.getElementById('typeMediumDesc').textContent = t.mediumDesc;
+  document.getElementById('typeHardLabel').textContent = t.hard;
+  document.getElementById('typeHardDesc').textContent = t.hardDesc;
+  document.getElementById('stepLabel3').textContent = t.done;
+  document.getElementById('q3').textContent = t.q3;
+  document.getElementById('resultUnit').textContent = t.unit;
+  document.getElementById('backBtn2').textContent = t.back;
+  document.getElementById('resetBtn').textContent = t.restart;
+  const langBtn = document.getElementById('langBtn');
+  langBtn.innerHTML = '';
+  langBtn.appendChild(flagImg(t.cc, 28));
+  langMenu.querySelectorAll('.lang-option').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === code);
+  });
+  if (count && type) showResult();
+}
 
 // Build egg buttons
 const grid = document.getElementById('eggGrid');
+const row1 = document.getElementById('eggRow1');
+const row2 = document.getElementById('eggRow2');
 for (let i = 1; i <= 7; i++) {
   const b = document.createElement('button');
   b.className = 'egg-btn';
@@ -221,7 +467,7 @@ for (let i = 1; i <= 7; i++) {
     b.classList.add('active');
     document.getElementById('nextBtn0').disabled = false;
   };
-  grid.appendChild(b);
+  (i <= 4 ? row1 : row2).appendChild(b);
 }
 
 function selectType(btn) {
@@ -242,16 +488,11 @@ function goTo(step) {
 }
 
 function showResult() {
+  const t = i18n[currentLang];
   const ml = data[type][count - 1];
   document.getElementById('resultMl').textContent = ml;
   document.getElementById('resultInfo').innerHTML =
-    `<strong>${count}</strong> ${eggWord(count)} — <strong>${typeNames[type]}</strong>`;
-}
-
-function eggWord(n) {
-  if (n === 1) return 'яйцо';
-  if (n >= 2 && n <= 4) return 'яйца';
-  return 'яиц';
+    `<strong>${count}</strong> ${t.egg(count)} — <strong>${t[type]}</strong>`;
 }
 
 function reset() {
@@ -263,6 +504,7 @@ function reset() {
   goTo(0);
 }
 
+setLang(detectLang());
 goTo(0);
 </script>
 </body>
