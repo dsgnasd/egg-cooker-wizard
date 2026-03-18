@@ -1,6 +1,6 @@
 {
-  "name": "Egg Cooker Wizard",
-  "short_name": "Egg Cooker",
+  "name": "Eggxact",
+  "short_name": "Eggxact",
   "start_url": "egg-wizard.html",
   "display": "standalone",
   "background_color": "#fdf6e3",
