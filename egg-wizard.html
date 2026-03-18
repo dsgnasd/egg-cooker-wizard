@@ -268,6 +268,23 @@
   .dot.active { background: #FF6B00; width: 28px; border-radius: 4px; }
   .dot.done { background: #FF6B00; }
 
+  /* Tip */
+  .tip {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background: #FFF7F0;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #996633;
+    line-height: 1.5;
+    text-align: left;
+    border: 1px solid #FFE8D4;
+  }
+  .tip::before {
+    content: '📌';
+    margin-right: 6px;
+  }
+
   /* Safe area bottom padding for notched phones */
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .card { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
@@ -296,6 +313,7 @@
       <div class="egg-row" id="eggRow1"></div>
       <div class="egg-row" id="eggRow2"></div>
     </div>
+    <div class="tip" id="tip1"></div>
     <div class="nav">
       <button class="btn btn-next" id="nextBtn0" disabled onclick="goTo(1)"></button>
     </div>
@@ -364,6 +382,7 @@ const i18n = {
     medium: 'Полутвёрдое', mediumDesc: 'Кремовый желток, ~6 мин',
     hard: 'Вкрутую', hardDesc: 'Твёрдый желток, ~10 мин',
     egg: (n) => n === 1 ? 'яйцо' : (n >= 2 && n <= 4 ? 'яйца' : 'яиц'),
+    tip: 'Проколите каждое яйцо с тупой стороны перед варкой — так скорлупа не треснет',
     cc: 'ru'
   },
   en: {
@@ -381,6 +400,7 @@ const i18n = {
     medium: 'Medium', mediumDesc: 'Creamy yolk, ~6 min',
     hard: 'Hard-boiled', hardDesc: 'Firm yolk, ~10 min',
     egg: (n) => n === 1 ? 'egg' : 'eggs',
+    tip: 'Pierce each egg at the wide end before cooking — prevents cracking',
     cc: 'gb'
   },
   de: {
@@ -398,6 +418,7 @@ const i18n = {
     medium: 'Mittel', mediumDesc: 'Cremiges Eigelb, ~6 Min',
     hard: 'Hart', hardDesc: 'Festes Eigelb, ~10 Min',
     egg: (n) => n === 1 ? 'Ei' : 'Eier',
+    tip: 'Jedes Ei vor dem Kochen am stumpfen Ende anstechen — verhindert Risse',
     cc: 'de'
   },
   fr: {
@@ -415,6 +436,7 @@ const i18n = {
     medium: 'Mollet', mediumDesc: 'Jaune crémeux, ~6 min',
     hard: 'Dur', hardDesc: 'Jaune ferme, ~10 min',
     egg: (n) => n === 1 ? 'œuf' : 'œufs',
+    tip: 'Percez chaque œuf au gros bout avant la cuisson — évite les fissures',
     cc: 'fr'
   },
   es: {
@@ -432,6 +454,7 @@ const i18n = {
     medium: 'Medio', mediumDesc: 'Yema cremosa, ~6 min',
     hard: 'Duro', hardDesc: 'Yema firme, ~10 min',
     egg: (n) => n === 1 ? 'huevo' : 'huevos',
+    tip: 'Perfore cada huevo en el extremo ancho antes de cocinar — evita que se agriete',
     cc: 'es'
   },
   zh: {
@@ -449,6 +472,7 @@ const i18n = {
     medium: '半熟蛋', mediumDesc: '软嫩蛋黄，约6分钟',
     hard: '全熟蛋', hardDesc: '全熟蛋黄，约10分钟',
     egg: () => '个蛋',
+    tip: '煮前在鸡蛋钝端扎个小孔——防止蛋壳破裂',
     cc: 'cn'
   },
   ja: {
@@ -466,6 +490,7 @@ const i18n = {
     medium: '中間', mediumDesc: 'クリーミーな黄身、約6分',
     hard: '固ゆで', hardDesc: 'しっかり黄身、約10分',
     egg: () => '個',
+    tip: 'ゆでる前に卵の丸い方に小さな穴を開けてください — ひび割れを防ぎます',
     cc: 'jp'
   }
 };
@@ -502,6 +527,7 @@ function setLang(code) {
   document.getElementById('stepLabel1').textContent = t.step(1);
   document.getElementById('q1').textContent = t.q1;
   document.getElementById('nextBtn0').textContent = t.next;
+  document.getElementById('tip1').textContent = t.tip;
   document.getElementById('stepLabel2').textContent = t.step(2);
   document.getElementById('q2').textContent = t.q2;
   document.getElementById('backBtn1').textContent = t.back;
@@ -561,10 +587,22 @@ function goTo(step) {
   if (step === 2) showResult();
 }
 
+function animateNumber(el, target, duration) {
+  const start = performance.now();
+  const from = 0;
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    el.textContent = Math.round(from + (target - from) * ease);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 function showResult() {
   const t = i18n[currentLang];
   const ml = data[type][count - 1];
-  document.getElementById('resultMl').textContent = ml;
+  animateNumber(document.getElementById('resultMl'), ml, 800);
   document.getElementById('resultInfo').innerHTML =
     `<strong>${count}</strong> ${t.egg(count)} — <strong>${t[type]}</strong>`;
 }
